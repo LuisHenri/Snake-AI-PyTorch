@@ -12,10 +12,10 @@ font = pygame.font.Font("arial.ttf", 25)
 
 
 class Direction(Enum):
-    RIGHT = 1
-    LEFT = 2
-    UP = 3
-    DOWN = 4
+    UP = 1
+    RIGHT = 2
+    DOWN = 3
+    LEFT = 4
 
 
 Point = namedtuple("Point", "x, y")
@@ -63,7 +63,6 @@ class SnakeGame:
 
     def play_step(self):
         # 1. collect user input
-        prev_direction = self.direction
         new_direction = self.direction
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -80,7 +79,7 @@ class SnakeGame:
                     new_direction = Direction.DOWN
 
         # 2. move
-        self._move(new_direction, prev_direction)  # update the head
+        self._move(new_direction)  # update the head
         self.snake.insert(0, self.head)
 
         # 3. check if game over
@@ -105,12 +104,13 @@ class SnakeGame:
     def _is_collision(self):
         # hits boundary
         if (
-            self.head.x > self.w - BLOCK_SIZE
+            0 > self.head.x > self.w - BLOCK_SIZE
             or self.head.x < 0
             or self.head.y > self.h - BLOCK_SIZE
             or self.head.y < 0
         ):
             return True
+
         # hits itself
         if self.head in self.snake[1:]:
             return True
@@ -138,15 +138,15 @@ class SnakeGame:
         self.display.blit(text, [0, 0])
         pygame.display.flip()
 
-    def _move(self, new_direction, prev_direction):
-        x, y = self._increment_snake(new_direction)
-
-        # hits itself
-        if Point(x, y) in self.snake[1:]:
-            x, y = self._increment_snake(prev_direction)
-            self.direction = prev_direction
-        else:
+    def _move(self, new_direction):
+        # Check if it is the opposite direction
+        if (
+            new_direction != self.direction
+            and (new_direction.value + self.direction.value) % 2 != 0
+        ):
             self.direction = new_direction
+
+        x, y = self._increment_snake(self.direction)
 
         self.head = Point(x, y)
 

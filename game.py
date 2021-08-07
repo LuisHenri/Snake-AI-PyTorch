@@ -11,10 +11,10 @@ font = pygame.font.Font("arial.ttf", 25)
 
 
 class Direction(Enum):
-    RIGHT = 1
-    LEFT = 2
-    UP = 3
-    DOWN = 4
+    UP = 1
+    RIGHT = 2
+    DOWN = 3
+    LEFT = 4
 
 
 Point = namedtuple("Point", "x, y")
@@ -65,6 +65,7 @@ class SnakeGameAI:
 
     def play_step(self, action):
         self.frame_iteration += 1
+
         # 1. collect user input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -81,25 +82,26 @@ class SnakeGameAI:
         if self.is_collision() or self.frame_iteration > 100 * len(self.snake):
             game_over = True
             reward = -10
-            return reward, game_over, self.score
-
-        # 4. place new food or just move
-        if self.head == self.food:
-            self.score += 1
-            reward = 10
-            self._place_food()
         else:
-            self.snake.pop()
+            # 4. place new food or just move
+            if self.head == self.food:
+                self.score += 1
+                reward = 10
+                self._place_food()
+            else:
+                self.snake.pop()
 
-        # 5. update ui and clock
-        self._update_ui()
-        self.clock.tick(SPEED)
+            # 5. update ui and clock
+            self._update_ui()
+            self.clock.tick(SPEED)
+
         # 6. return game over and score
         return reward, game_over, self.score
 
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
+
         # hits boundary
         if (
             pt.x > self.w - BLOCK_SIZE
@@ -108,6 +110,7 @@ class SnakeGameAI:
             or pt.y < 0
         ):
             return True
+
         # hits itself
         if pt in self.snake[1:]:
             return True
@@ -138,7 +141,7 @@ class SnakeGameAI:
     def _move(self, action):
         # [straight, right, left]
 
-        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        clock_wise = [Direction.UP, Direction.RIGHR, Direction.DOWN, Direction.LEFT]
         idx = clock_wise.index(self.direction)
 
         if np.array_equal(action, [1, 0, 0]):
@@ -150,17 +153,28 @@ class SnakeGameAI:
             next_idx = (idx - 1) % 4
             new_dir = clock_wise[next_idx]  # left turn r -> u -> l -> d
 
-        self.direction = new_dir
+        # Check if it is the opposite direction
+        if (
+            new_dir != self.direction
+            and (new_dir.value + self.direction.value) % 2 != 0
+        ):
+            self.direction = new_dir
 
-        x = self.head.x
-        y = self.head.y
-        if self.direction == Direction.RIGHT:
-            x += BLOCK_SIZE
-        elif self.direction == Direction.LEFT:
-            x -= BLOCK_SIZE
-        elif self.direction == Direction.DOWN:
-            y += BLOCK_SIZE
-        elif self.direction == Direction.UP:
-            y -= BLOCK_SIZE
+        x, y = self._increment_snake(self.direction)
 
         self.head = Point(x, y)
+
+    def _increment_snake(self, direction):
+        x = self.head.x
+        y = self.head.y
+
+        if direction == Direction.RIGHT:
+            x += BLOCK_SIZE
+        elif direction == Direction.LEFT:
+            x -= BLOCK_SIZE
+        elif direction == Direction.DOWN:
+            y += BLOCK_SIZE
+        elif direction == Direction.UP:
+            y -= BLOCK_SIZE
+
+        return x, y
