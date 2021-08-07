@@ -169,8 +169,8 @@ class SnakeGame:
 if __name__ == "__main__":
     game = SnakeGame()
 
-    game_over = True
-    while game_over:
+    game_over = False
+    while not game_over:
         game_over, score = game.play_step()
 
     print("Final Score", score)
